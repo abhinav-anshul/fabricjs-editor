@@ -1,0 +1,35 @@
+#canvas-container {
+  border: 1px solid #000;
+  margin: 20px;
+  height: 500px;
+  width: 500px;
+}
+
+.sample-canvas {
+  height: 500px;
+}
+
+button {
+  margin: 5px;
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  list-style-type: none;
+}
+
+li {
+  padding: 10px;
+}
+
+.text-wrapper {
+  margin: 20px;
+}
+
+h1 {
+  margin: 0;
+  padding: 0;
+}
