@@ -75,10 +75,10 @@ const ImagesItem = () => {
   return (
     <div>
       <ul>
-        {images.map((item, i) => (
-          <li>
+        {images.map((item, index) => (
+          <li key={index}>
             <img
-              crossorigin="anonymous"
+              crossOrigin="anonymous"
               src={item.mainUrl}
               alt="img"
               height={"100px"}

@@ -12,7 +12,9 @@ function App() {
   const [transperancy, setTransperancy] = useState(1)
   const [shadow, setShadow] = useState(0)
   const [blur, setBlur] = useState(0)
-
+  const [undoState, setUndoState] = useState([])
+  const [redoState, setRedoState] = useState([])
+  console.log("editor.canvas.loadFromJSON", editor?.canvas?.loadFromJSON)
   const handleRemove = () => {
     let selection = editor.canvas.getActiveObject()
     if (selection) {
@@ -32,8 +34,48 @@ function App() {
       editor.canvas.setHeight(500)
       editor.canvas.setWidth(500)
     }
+    console.log("activedropdown", activeDragDropItem)
   }, [])
 
+  // useEffect(() => {
+  //   let test = new fabric.Rect({
+  //     left: 150,
+  //     top: 200,
+  //     originX: "left",
+  //     originY: "top",
+  //     width: 150,
+  //     height: 120,
+  //     angle: -10,
+  //     fill: "rgba(255,0,0,0.5)",
+  //     transparentCorners: false,
+  //   })
+
+  //   editor?.canvas?.item(0)?.set({
+  //     borderColor: "gray",
+  //     cornerColor: "black",
+  //     cornerSize: 12,
+  //     transparentCorners: true,
+  //     hasControls: true,
+  //   })
+  //   // userClipPath?.setControlVisible("mtr", false)
+  //   console.log("TEST", test)
+  //   editor?.canvas?.add(test)
+  //   editor?.canvas?.renderAll()
+  //   console.log("editor?.canvas?.getActiveObject()", editor?.canvas?.getActiveObject())
+  //   console.log("fabric", fabric)
+  //   console.log("editor?.canvas", editor?.canvas)
+  //   console.log("userClipPath.getBoundingRect()", test?.getBoundingRect())
+  // }, [editor])
+  // =====
+  useEffect(() => {
+    editor?.canvas?.on("object:modified", (e) => {
+      setUndoState(e?.target?.canvas?.historyUndo)
+    })
+  }, [editor])
+  // =====
+
+  console.log("undoState", undoState)
+  console.log("redoState", redoState)
   useEffect(() => {
     if (window !== undefined) {
       window.onkeydown = function (e) {
@@ -51,12 +93,18 @@ function App() {
     e.preventDefault()
     if (activeDragDropItem) {
       if (activeDragDropItem.type === "image") {
-        fabric.Image.fromURL(activeDragDropItem.src, function (oImg) {
-          oImg.scale(0.2)
-          oImg.top = e.nativeEvent.layerY
-          oImg.left = e.nativeEvent.layerX
-          editor.canvas.add(oImg)
-        })
+        fabric.Image.fromURL(
+          activeDragDropItem.src,
+          function (oImg) {
+            oImg.scale(0.2)
+            oImg.top = e.nativeEvent.layerY
+            oImg.left = e.nativeEvent.layerX
+            editor.canvas.add(oImg)
+          },
+          {
+            crossOrigin: "",
+          }
+        )
       }
 
       if (activeDragDropItem.type === "HeadingWithSubHeading") {
@@ -73,6 +121,23 @@ function App() {
 
           editor.canvas.add(obj)
           editor.canvas.renderAll()
+
+          // ================================================
+          let userClipPath = new fabric.Rect({
+            width: 100,
+            height: 80,
+            fill: "rgb(178, 178, 178, 0.4)",
+            transparentCorners: false,
+            cornerColor: "rgb(178, 178, 178, 0.8)",
+            strokeWidth: 10,
+            cornerStrokeColor: "black",
+            borderColor: "black",
+            borderDashArray: [5, 5],
+            cornerStyle: "circle",
+          })
+          editor.canvas.add(userClipPath)
+          editor.canvas.renderAll()
+          // ================================================
 
           return obj
         }, null)
@@ -356,25 +421,16 @@ function App() {
       })
     } else if (type === "blur") {
       setBlur(value)
-      // editor?.canvas?.getActiveObject()?.filters?.push({
-      //   blur: 0.5,
-      //   horizontal: false,
-      //   aspectRatio: 1,
-      // })
-      // editor.canvas.getActiveObject().set({
-      //   Blur: 0.2,
-      // })
 
-      let test = new fabric.Image.filters.Blur({
+      let filterProp = new fabric.Image.filters.Blur({
         blur: Number(value),
         horizontal: false,
         aspectRatio: 1,
       })
-
-      editor?.canvas?.getActiveObject()?.filters?.push(test)
+      editor?.canvas?.getActiveObject()?.filters?.push(filterProp)
 
       console.log("canvas", editor?.canvas?.getActiveObject())
-      // editor?.canvas?.getActiveObject()?.applyFilters()
+      editor?.canvas?.getActiveObject()?.applyFilters()
     }
     editor.canvas.renderAll()
   }
@@ -400,6 +456,12 @@ function App() {
 
   const handleLink = () => {}
 
+  function handleUndo() {
+    let lastItem = undoState.pop()
+    editor.canvas.loadFromJSON(lastItem)
+    setRedoState([...redoState, lastItem])
+  }
+
   return (
     <div className="App">
       <button onClick={handleGroup}>Group</button>
@@ -421,7 +483,16 @@ function App() {
       <button onClick={() => handleAlignment("hleft")}>H Left</button>
       <button onClick={() => handleAlignment("hcenter")}>H Center</button>
       <button onClick={() => handleAlignment("hright")}>H Right</button>
-      {/* <button onClick={() => handleCrop("crop")}>Crop</button> */}
+      <button onClick={handleUndo}>Undo</button>
+      <button
+        onClick={() => {
+          let redoLength = redoState.length - 1
+          editor.canvas.loadFromJSON(redoState[redoLength])
+          console.log("redoLength", redoLength)
+        }}
+      >
+        Redo
+      </button>
       <br />
       <div>
         Transparency
